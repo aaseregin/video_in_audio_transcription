@@ -1,0 +1,39 @@
+# Аудио файлы
+*.mp3
+*.wav
+*.ogg
+*.flac
+*.m4a
+*.aac
+*.wma
+*.aiff
+*.alac
+*.ape
+*.opus
+
+# Видео файлы
+*.mp4
+*.avi
+*.mov
+*.wmv
+*.flv
+*.mkv
+*.webm
+*.m4v
+*.mpg
+*.mpeg
+*.3gp
+
+# Текстовые файлы
+*.txt
+
+# Субтитры
+*.srt
+*.sub
+*.ssa
+*.ass
+*.vtt
+
+# Временные файлы
+*.tmp
+*.temp 
