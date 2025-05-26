@@ -130,7 +130,7 @@ def transcribe_with_progress(audio_path: str, model_name: str, output_formats: t
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Transcribe audio with progress using OpenAI Whisper.")
     parser.add_argument("--audio_file", "-a", required=True, help="Path to the audio file to transcribe.")
-    parser.add_argument("--model", "-m", default="large-v3",
+    parser.add_argument("--model", "-m", default="medium",
                         choices=["tiny", "tiny.en", "base", "base.en", "small", "small.en", "medium", "medium.en", "large", "large-v2","large-v3"],
                         help="Whisper model name to use.")
     parser.add_argument("--output_format", "-f", choices=["txt", "srt", "both"],

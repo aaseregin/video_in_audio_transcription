@@ -26,6 +26,8 @@
 
 # Текстовые файлы
 *.txt
+!requirements.txt
+
 
 # Субтитры
 *.srt
@@ -37,3 +39,6 @@
 # Временные файлы
 *.tmp
 *.temp 
+
+# md файлы
+/cursor_video_to_audio_transcription_pro.md
