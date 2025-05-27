@@ -42,3 +42,5 @@
 
 # md файлы
 /cursor_video_to_audio_transcription_pro.md
+
+__pycache__/
