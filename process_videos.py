@@ -81,8 +81,6 @@ def process_video_folder(folder_path):
                 device
             )
             
-            # Удаляем временный аудио файл
-            os.remove(audio_path)
             print(f"Обработка {video_file} завершена успешно.")
             
         except Exception as e:
