@@ -44,3 +44,6 @@
 /cursor_video_to_audio_transcription_pro.md
 
 __pycache__/
+
+# Папка для видео и извлеченных кадров
+/video_for_jpeg/
