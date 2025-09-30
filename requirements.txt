@@ -1,5 +1,27 @@
-openai-whisper==20231117
-torch>=2.0.0
-numpy>=1.20.0
-ffmpeg-python>=0.2.0
-tqdm>=4.65.0 
+# === Простые зависимости (устанавливаются через pip install -r requirements.txt) ===
+
+# Основная библиотека для транскрибации. ВАЖНО: устанавливать ПОСЛЕ CTranslate2.
+faster-whisper
+
+# Библиотеки для работы с аудио и утилиты
+librosa
+numpy
+ffmpeg-python
+tqdm
+scipy
+
+
+# === Сложные зависимости (ТРЕБУЮТ РУЧНОЙ УСТАНОВКИ) ===
+
+# PyTorch - НЕОБХОДИМО установить вручную для поддержки GPU.
+# Зайдите на https://pytorch.org/get-started/locally/ и скопируйте команду для вашей системы.
+# Пример для CUDA 12.1:
+# pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+
+# CTranslate2 - главная зависимость для faster-whisper.
+# Устанавливается отдельной командой в зависимости от наличия GPU.
+# Для GPU (NVIDIA):
+# pip install ctranslate2 -f https://storage.googleapis.com/ctranslate2-wheels/torch-2.3.0/cuda-12.1.html
+#
+# Для CPU:
+# pip install ctranslate2

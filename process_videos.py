@@ -1,39 +1,46 @@
+# process_videos.py
+
 import os
-import subprocess
-from pathlib import Path
 import whisper_progress as wp
 import torch
 import ffmpeg
 
-def check_gpu_memory_for_large_v3():
-    """Проверяет, достаточно ли видеопамяти для модели large-v3."""
+def check_gpu_memory_for_model(model_name="large-v3"):
+    """Проверяет, достаточно ли видеопамяти для выбранной модели."""
     if not torch.cuda.is_available():
         return False
     
-    # Примерный объем памяти, необходимый для large-v3 (около 10GB)
-    required_memory = 10 * 1024 * 1024 * 1024  # 10GB в байтах
+    # Требования к памяти для оптимизированных моделей (примерные)
+    # large-v3: ~8GB, medium: ~5GB, small: ~2GB
+    model_memory_req = {
+        "large-v3": 8, "large-v2": 8, "large": 8,
+        "medium": 5, "medium.en": 5,
+        "small": 2, "small.en": 2,
+    }
     
-    # Получаем информацию о доступной памяти GPU
-    gpu_memory = torch.cuda.get_device_properties(0).total_memory
-    free_memory = torch.cuda.memory_reserved(0) - torch.cuda.memory_allocated(0)
+    # Для маленьких моделей всегда считаем, что памяти хватит
+    required_gb = model_memory_req.get(model_name, 1) 
     
-    # Проверяем, достаточно ли свободной памяти
-    return free_memory >= required_memory
+    gpu_memory_gb = torch.cuda.get_device_properties(0).total_memory / (1024**3)
+    
+    print(f"Для модели '{model_name}' требуется ~{required_gb} GB. В наличии: {gpu_memory_gb:.2f} GB.")
+    return gpu_memory_gb >= required_gb
 
 def extract_audio_from_video(video_path):
-    """Извлекает аудио из видео файла."""
+    """Извлекает аудио из видео файла в формате WAV 16kHz mono."""
     if not os.path.exists(video_path):
         raise FileNotFoundError(f"Видеофайл не найден: {video_path}")
     
-    # Создаем имя выходного файла
     output_path = os.path.splitext(video_path)[0] + '.wav'
     
     print(f"Извлечение аудио из {video_path}...")
     try:
-        # Извлекаем аудио с помощью ffmpeg
-        stream = ffmpeg.input(video_path)
-        stream = ffmpeg.output(stream, output_path)
-        ffmpeg.run(stream, overwrite_output=True)
+        (
+            ffmpeg
+            .input(video_path)
+            .output(output_path, ar=16000, ac=1, y=None) # ar=16kHz, ac=mono, y=overwrite
+            .run(quiet=True, overwrite_output=True)
+        )
         print(f"Аудио успешно извлечено и сохранено в: {output_path}")
         return output_path
     except ffmpeg.Error as e:
@@ -42,59 +49,53 @@ def extract_audio_from_video(video_path):
 
 def process_video_folder(folder_path):
     """Обрабатывает все видео файлы в указанной папке."""
-    # Поддерживаемые форматы видео
     video_extensions = ('.mp4', '.avi', '.mov', '.wmv', '.flv', '.mkv', '.webm', '.m4v', '.mpg', '.mpeg', '.3gp')
     
-    # Получаем список всех видео файлов
-    video_files = [f for f in os.listdir(folder_path) 
-                  if f.lower().endswith(video_extensions)]
+    video_files = [f for f in os.listdir(folder_path) if f.lower().endswith(video_extensions)]
     
     if not video_files:
-        print(f"В папке {folder_path} не найдено видео файлов.")
+        print(f"В папке '{folder_path}' не найдено видео файлов.")
         return
     
     print(f"Найдено {len(video_files)} видео файлов для обработки.")
     
-    # Определяем устройство для обработки
-    device = "cuda" if check_gpu_memory_for_large_v3() else "cpu"
-    print(f"Используется устройство: {device}")
+    model_to_use = "large-v3"
+    device = "cuda" if check_gpu_memory_for_model(model_to_use) else "cpu"
+    print(f"Будет использоваться модель: '{model_to_use}' на устройстве: '{device}'")
     
-    # Обрабатываем каждый видео файл
     for video_file in video_files:
         video_path = os.path.join(folder_path, video_file)
-        print(f"\nОбработка видео: {video_file}")
+        print(f"\n--- Обработка видео: {video_file} ---")
         
-        # Извлекаем аудио
-        print("Извлечение аудио...")
         audio_path = extract_audio_from_video(video_path)
         if not audio_path:
             print(f"Пропуск файла {video_file} из-за ошибки извлечения аудио.")
             continue
         
         try:
-            # Транскрибируем аудио
             print("Транскрибация аудио...")
+            # Вызываем исправленную функцию
             wp.transcribe_with_progress(
                 audio_path,
-                "large-v3",  # Используем модель large-v3
+                model_to_use,
                 ("txt", "srt"),
                 device
             )
-            
             print(f"Обработка {video_file} завершена успешно.")
-            
+            os.remove(audio_path) # Удаляем временный wav файл
+
         except Exception as e:
-            print(f"Ошибка при обработке {video_file}: {e}")
+            print(f"Критическая ошибка при обработке {video_file}: {e}")
+            import traceback
+            traceback.print_exc()
             continue
 
 if __name__ == "__main__":
-    # Путь к папке с видео
     video_folder = "video"
     
-    # Проверяем существование папки
     if not os.path.exists(video_folder):
-        print(f"Папка {video_folder} не существует.")
-        exit(1)
+        os.makedirs(video_folder)
+        print(f"Папка '{video_folder}' была создана. Пожалуйста, поместите в нее видеофайлы для обработки.")
+        exit(0)
     
-    # Запускаем обработку
-    process_video_folder(video_folder) 
+    process_video_folder(video_folder)
